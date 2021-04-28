@@ -1,11 +1,11 @@
 FROM ubuntu:18.04
 
-LABEL maintainer="Danylo Ulianych"
+# Based on MIT licensed code from Danylo Ulianych
+LABEL maintainer="@jgerardos"
 
-RUN apt-get update && apt-get install -y alien clinfo
+RUN apt-get update && apt-get install -y alien nano screen tmux vim
 
 # Install Intel OpenCL driver
-#ENV INTEL_OPENCL_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13793/l_opencl_p_18.1.0.013.tgz
 ENV INTEL_OPENCL_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/9019/opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
 
 RUN mkdir -p /tmp/opencl-driver-intel
@@ -18,13 +18,10 @@ RUN curl -O $INTEL_OPENCL_URL; \
     echo /opt/intel/*/lib64/libintelocl.so > /etc/OpenCL/vendors/intel.icd; \
     rm -rf *
 
-############### end Intel OpenCL driver installation ###############
+# End Intel OpenCL driver installation #
 
 ENV HASHCAT_VERSION        v6.1.1
 ENV HASHCAT_UTILS_VERSION  v1.9
-ENV HCXTOOLS_VERSION       6.0.2
-ENV HCXDUMPTOOL_VERSION    6.0.6
-ENV HCXKEYS_VERSION        master
 
 # Update & install packages for installing hashcat
 RUN apt-get update && \
@@ -37,9 +34,11 @@ RUN git clone https://github.com/hashcat/hashcat.git && cd hashcat && git checko
 RUN git clone https://github.com/hashcat/hashcat-utils.git && cd hashcat-utils/src && git checkout ${HASHCAT_UTILS_VERSION} && make
 RUN ln -s /root/hashcat-utils/src/cap2hccapx.bin /usr/bin/cap2hccapx
 
-RUN git clone https://github.com/ZerBea/hcxtools.git && cd hcxtools && git checkout ${HCXTOOLS_VERSION} && make install
+# Download and install rockyou
+RUN wget https://github.com/danielmiessler/SecLists/raw/master/Passwords/Leaked-Databases/rockyou.txt.tar.gz
+RUN tar zxvf rockyou.txt.tar.gz
+RUN rm rockyou.txt.tar.gz
+RUN mv rockyou.txt /etc/rockyou.txt
+RUN ln -s /etc/rockyou.txt /root/rockyou.txt
 
-RUN git clone https://github.com/ZerBea/hcxdumptool.git && cd hcxdumptool && git checkout ${HCXDUMPTOOL_VERSION} && make install
 
-RUN git clone https://github.com/hashcat/kwprocessor.git && cd kwprocessor && git checkout ${HCXKEYS_VERSION} && make
-RUN ln -s /root/kwprocessor/kwp /usr/bin/kwp
